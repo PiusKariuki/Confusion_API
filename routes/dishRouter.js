@@ -1,23 +1,35 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
-const dishRouter = express.Router()
+//load the models
+const Dishes = require('../models/dishes');
+const dishRouter = express.Router();
 
 dishRouter.use(bodyParser.json());
 dishRouter.route('/') //will mounnt this in the index
 
-  .all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    next();
-  })
-
   .get((req, res, next) => {
-    res.end(`Will send all dishes to you.`);
+    //  use find method from mongoose
+    Dishes.find({}) //returns promise
+      .then(dishes => {   //returns an array of dishes
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes); //sending json response to client
+      }, err => next(err))
+      .catch(err => next(err)); //passes err to app.js
+
   })
 
   .post((req, res, next) => {
-    res.end(`Will add the dish: ${req.body.name} with details: ${req.body.description}`);
+    Dishes.create(req.body) //return promise
+      .then(dish => {
+        console.log('Dish created');
+        res.statusCode = 200;
+        res.setHeader('Content_Type', 'application/json');
+        res.json(dish)
+      }, err => next(err))
+      .catch(err => next(err));
   })
 
   .put((req, res, next) => {
@@ -25,20 +37,28 @@ dishRouter.route('/') //will mounnt this in the index
   })
 
   .delete((req, res, next) => {
-    res.end('Deleting all dishes');
+    Dishes.deleteMany({})  //returns promise remove({})
+      .then(resp => {
+        console.log(`dishes deleted`);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp);
+      }, err => next(err))
+      .catch(err => next(err));
   });
 
 // :dishId
 dishRouter.route('/:dishId')
 
-  .all((req, res, next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    next();
-  })
-
   .get((req, res, next) => {
-    res.end(`Will send dish ${req.params.dishId} to you.`);
+    Dishes.findById(req.params.dishId)
+      .then(dish => {
+        console.log(`Dish found`);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+      }, err => next(err))
+      .catch(err => next(err));
   })
 
   .post((req, res, next) => {
@@ -46,12 +66,27 @@ dishRouter.route('/:dishId')
   })
 
   .put((req, res, next) => {
-    res.write(`Updating dish.....\n`)
-    res.end(`Will Update dish ${req.params.dishId}`);
+    Dishes.findByIdAndUpdate(req.params.dishId, {
+      $set: req.body   //update the selected dish
+    }, { new: true })    //find returns updated dish
+      .then(dish => {
+        console.log('Dish updated');
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+      }, err => next(err))
+      .catch(err => next(err));
   })
 
   .delete((req, res, next) => {
-    res.end(`Deleting dish ${req.params.dishId}`);
+    Dishes.findByIdAndRemove(req.params.dishId)
+      .then(resp => {
+        console.log(`dish with id ${req.params.dishid} was deleted`);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp)
+      }, err => next(err))
+      .catch(err => next(err));
   })
 
 module.exports = dishRouter;

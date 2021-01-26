@@ -2,7 +2,7 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var logger = require('morgan')
 
 // routes
 var indexRouter = require('./routes/index');
@@ -11,8 +11,26 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 
+// loader for mongoose
+const mongoose = require('mongoose');
 
+// bring in the dishes model
+const Dishes = require('./models/dishes');
+
+// server uri
+const uri = 'mongodb://localhost:27017/conFusion';
+
+// connects aaapp to db
+const connect = mongoose.connect(uri,
+  { useNewUrlParser: true, useUnifiedTopology: true });
 var app = express();
+
+// invoke mthd connect
+connect.then(db => {
+  console.log('connected correctly to server....');
+}, err =>{
+  console.log(err);
+})
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -32,12 +50,12 @@ app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
