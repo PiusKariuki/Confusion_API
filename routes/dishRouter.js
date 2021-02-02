@@ -7,7 +7,7 @@ const Dishes = require('../models/dishes');
 const dishRouter = express.Router();
 
 dishRouter.use(bodyParser.json());
-dishRouter.route('/') //will mounnt this in the index
+dishRouter.route('/') //will mount this in the index
 
   .get((req, res, next) => {
     //  use find method from mongoose
@@ -26,8 +26,8 @@ dishRouter.route('/') //will mounnt this in the index
       .then(dish => {
         console.log('Dish created');
         res.statusCode = 200;
-        res.setHeader('Content_Type', 'application/json');
-        res.json(dish)
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
       }, err => next(err))
       .catch(err => next(err));
   })
