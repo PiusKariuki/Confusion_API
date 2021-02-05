@@ -54,6 +54,11 @@ app.use(session({
   store: new fileStore()
 }));
 
+
+// User router and index router
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 // everything after this has to be authorized
 // authenticating fn
 const auth = (req, res, next) => {
@@ -62,39 +67,20 @@ const auth = (req, res, next) => {
 
   if (!req.session.user) {   //if not authorized yet
 
-    var authHeader = req.headers.authorization;
-
-    if (!authHeader) {
+   
       var err = new Error('You are unauthorized, please log in');
-      res.setHeader('WWW-Authenticate', 'Basic');
       err.status = 401;
       next(err);//skips middleware all the  way to error handler
       return;
-    }
-
-    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':')
-    var user = auth[0];
-    var pass = auth[1];
-
-    if (user == 'admin' && pass == 'password') {
-      req.session.user = 'admin';
-      next(); //authorized
-    }
-    else {
-      var err = new Error('Not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      next(err);
-    }
-
+  
   } else {
 
-    if (req.session.user === 'admin') {
+    if (req.session.user === 'autheticated') {
       console.log(`req.session ${req.session}`);
       next(); //authenticate
     } else {
       var err = new Error('You are not authenticated!')
-      err.status = 401;
+      err.status = 403;
       next(err);
     }
   }
@@ -106,8 +92,6 @@ app.use(auth);
 app.use(express.static(path.join(__dirname, 'public'))); //static server
 
 //Mounting routes
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
