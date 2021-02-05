@@ -1,8 +1,11 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+// var cookieParser = require('cookie-parser');
 var logger = require('morgan')
+var session = require('express-session');
+var fileStore = require('session-file-store')(session);
+
 
 // routes
 var indexRouter = require('./routes/index');
@@ -40,20 +43,29 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use(cookieParser('12345-67890-09876-54321'));
+//app.use(cookieParser('12345-67890-09876-54321'));
+
+// session middleware
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  resave: false,
+  saveUninitialized: false,
+  store: new fileStore()
+}));
 
 // everything after this has to be authorized
 // authenticating fn
 const auth = (req, res, next) => {
-  console.log(req.signedCookies);
+  console.log(req.session);
 
 
-  if (!req.signedCookies.user) {   //if not authorized yet
+  if (!req.session.user) {   //if not authorized yet
 
     var authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      err = new Error('You are unauthorized, please log in');
+      var err = new Error('You are unauthorized, please log in');
       res.setHeader('WWW-Authenticate', 'Basic');
       err.status = 401;
       next(err);//skips middleware all the  way to error handler
@@ -65,7 +77,7 @@ const auth = (req, res, next) => {
     var pass = auth[1];
 
     if (user == 'admin' && pass == 'password') {
-      res.cookie('user', 'admin', { signed: true })
+      req.session.user = 'admin';
       next(); //authorized
     }
     else {
@@ -77,7 +89,8 @@ const auth = (req, res, next) => {
 
   } else {
 
-    if (req.signedCookies.user == 'admin') {
+    if (req.session.user === 'admin') {
+      console.log(`req.session ${req.session}`);
       next(); //authenticate
     } else {
       var err = new Error('You are not authenticated!')
