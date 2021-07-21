@@ -4,6 +4,7 @@ var User = require('../models/users');
 const bodyParser = require('body-parser');
 var passport = require('passport');
 var authenticate = require('../authenticate');
+const { rawListeners } = require('../models/users');
 
 
 // body parser middleware
@@ -21,22 +22,35 @@ router.post('/signup', (req, res, next) => {
     }
 
     else {
-      passport.authenticate('local')(req, res, () => {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({ Success: true, status: 'Registration successful!!' })
-      });
+      if (req.body.firstname)
+        user.firstname = req.body.firstname;
+      if (req.body.lastname)
+        user.lastname = req.body.lastname;
+      user.save((err, user) => {
+        if (err) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({ err: err });
+          return;
+        }
+
+        passport.authenticate('local')(req, res, () => {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({ Success: true, status: 'Registration successful!!' })
+        });
+      })
     }
 
   });
 });
 
 // login endpoint
-router.post('/login', passport.authenticate('local'), (req,res) =>{
-  var token = authenticate.getToken({_id: req.user._id}); //this will be the payload.ir the user id
+router.post('/login', passport.authenticate('local'), (req, res) => {
+  var token = authenticate.getToken({ _id: req.user._id }); //this will be the payload.ir the user id
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
-  res.json({Success: true, token: token, status: 'You are logged in!!'})
+  res.json({ Success: true, token: token, status: 'You are logged in!!' })
 });
 
 // logout endpoint
